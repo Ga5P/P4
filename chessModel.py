@@ -1,23 +1,45 @@
+valid_tournament_info = ['name', 'place', 'date', 'players', 'description', 'score historic', 'round duration']
+valid_player_info = ['name', 'age', 'last name', 'birth date', 'gender', 'rank', 'position in tournament']
+
+
 serialized_player = {}
 serialized_tournament = {}
 
+def varname(instance):
+    try:
+        iter(instance)
+        if instance == tournament.players:
+            name = 'players'
+        #elif instance == tournament.score_historic:
+            #name = 'score historic'
+        return name
+    except TypeError:
+        for name in globals():
+            if eval(name) == instance:
+                return name
 def get_num_player(val, dic):
     for key, value in dic.items():
         for k, v in value.items():
             if val == v:
                 return key
+def current_attributes(obj):
+    try:
+        iter(obj)
+        for i in obj:
+                return [k for k in vars(i).keys()]
+    except TypeError:
+        return [i for i in dir(obj) if i in f'valid_{obj}_info']
 
-'''def save_seri(dic):
-    dic[get_num_player(p, dic)] = info
-    pass'''
-
+# ----------------------------------------------------- #
+# ------------------- MODEL PART ---------------------- #
+# ----------------------------------------------------- #
 
 class Player:
     def __init__(self, name=None):
         self.name = name
 
     def enter_infos(self, info):
-        valid_infos = ['age', 'last name', 'birth date', 'gender', 'rank', 'position in tournament']
+
 
         num_player = input("Enter the player's name :\n")
         if len(tournament.players) >= num_player:
@@ -30,33 +52,6 @@ class Player:
 
         serialized_player[get_num_player(p, serialized_player)] = info
         pass
-
-    def modify_info(self):
-
-        p = input("Which Player?")
-
-        for play in tournament.players:
-            for key, value in vars(play).items():
-
-                if p == value:
-                    while False: continue
-
-                    if True:
-                        print('You can change these informations; ', "\n", key)
-                        ask = input("Which info do you want to change?")
-
-                    if key == ask:
-                        new = input(f'What is the new {ask} value?')
-                        serialized_player[get_num_player(p, serialized_player)] = {ask: new}
-                        setattr(play, f'{ask}', new)
-
-                        return f'The {ask} has been successfully changed'
-
-                    else:
-                        return "can't find this info"
-        else:
-            return "Can't find this player"
-
 
 class Tournament:
     def __init__(self, name=None):
@@ -75,6 +70,57 @@ class Tournament:
 
         self.players = players
 
+    def modif_infos(self, obj):
+
+        instance = varname(obj)
+        modif = int(input(f'How many {instance} would you modify ?'))
+        modifs = []
+
+        if obj == tournament.players:
+            if modif > 1:
+                iter = [i + 1 for i in range(modif)]
+                for it in iter:
+                    p = input(f"Which {instance} ?")
+                    print(f'({iter[-1] - it} remaining)')
+                    modifs.append(p)
+            elif modif == 1:
+                print(f"choose one in the list {[i.name for i in obj]}")
+                p = input(f"Which {instance} ?")
+                modifs.append(p)
+        else:
+            if modif == 1:
+                print(f"choose one in the list {obj.name}")
+                p = input(f"Which {instance} ?")
+                modifs.append(p)
+
+        valid = [i for i in current_attributes(obj) if i in valid_player_info or valid_tournament_info]
+        print('All the information you can change :', valid)
+        ask = input("Which info do you want to change ?")
+        for p in modifs:
+            if obj == tournament.players:
+                for play in tournament.players:
+                    for key, value in vars(play).items():
+
+                        while p == value:
+                            if ask == key:
+                                new = input(f'What is the new {ask} for {p}?')
+                                serialized_player[get_num_player(p, serialized_player)] = {ask: new}
+                                setattr(play, f'{ask}', new)
+                                print(f'The {ask} has been successfully changed')
+                                break
+            else:
+                iter = {k: v for k, v in vars(obj).items() if k != 'players'}
+                for key, value in iter.items():
+                    print(key, '====>', value)
+                    while p == value:
+                        print(p)
+                        if ask == key:
+                            new = input(f'What is the new {ask} for {p}?')
+                            # serialized_player[get_num_player(p, serialized_player)] = {ask: new}
+                            setattr(obj, f'{ask}', new)
+                            print(f'The {ask} has been successfully changed')
+                            break
+
 
 # ------------------------------------------------------------------- #
 # ------------------- WILL BE IN THE VIEW PART ---------------------- #
@@ -82,6 +128,4 @@ class Tournament:
 
 tournament = Tournament()
 tournament.add_players()
-
-player = Player()
-player.modify_info()
+tournament.modif_infos(tournament.players)
