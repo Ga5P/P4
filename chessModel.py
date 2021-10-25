@@ -1,7 +1,8 @@
 import random
+import datetime
 
 valid_tournament_info = ['name', 'place', 'date', 'description', 'score historic', 'round duration']
-valid_player_info = ['name', 'age', 'last name', 'birth date', 'gender', 'rank', 'position in tournament']
+valid_player_info = ['name', 'age', 'last name', 'birth date', 'gender', 'rank', 'position in tournament', 'total score']
 
 serialized_player = {}
 serialized_tournament = {}
@@ -24,11 +25,13 @@ def varname(instance):
                 if eval(name) == instance:
                     return name
 
+
 def get_num_player(val, dic):
     for key, value in dic.items():
         for k, v in value.items():
             if val == v:
                 return key
+
 
 def current_attributes(obj):
     try:
@@ -38,12 +41,14 @@ def current_attributes(obj):
     except TypeError:
         return [i for i in dir(tournament) if i in valid_tournament_info]
 
+
 def update_dic(dic, ask, new):
     part1 = {k: v for k, v in dic.items()}
     part2 = {ask: new}
     part1.update(part2)
 
     return part1
+
 
 # ----------------------------------------------------- #
 # ------------------- MODEL PART ---------------------- #
@@ -52,20 +57,7 @@ def update_dic(dic, ask, new):
 class Player:
     def __init__(self, name=None):
         self.name = name
-
-    # def enter_infos(self, info):
-
-    # num_player = input("Enter the player's name :\n")
-    # if len(tournament.players) >= num_player:
-    # pass
-    # else:
-    # return 'Please enter an number smaller than or equal to the number of challengers '
-
-    # For how many players ?
-    # For how many infos ?
-
-    # serialized_player[get_num_player(p, serialized_player)] = info
-    # pass
+        self.score = 0
 
 
 class Tournament:
@@ -101,15 +93,14 @@ class Tournament:
         except AttributeError:
             rounds = []
 
-        round = Round()
-        round.name = f"round_{Round.counter + 1}"
-        rounds.append(round)
+        rnd = Round()
+        rnd.name = f"round_{Round.counter + 1}"
+        rounds.append(rnd)
 
         self.rounds = rounds
         Round.counter += 1
 
-        pairs = round.generate_random_pairs()
-        return pairs
+        return rnd
 
     def modify_infos(self, obj):
 
@@ -162,7 +153,8 @@ class Tournament:
 
                             serialized_tournament[new] = serialized_tournament.pop(tournament.name)
                             tournament.name = new
-                            serialized_tournament[tournament.name] = update_dic(serialized_tournament[tournament.name], ask, new)
+                            serialized_tournament[tournament.name] = update_dic(serialized_tournament[tournament.name],
+                                                                                ask, new)
 
                         if ask == key:
                             new = input(f'What is the new {ask} for {p}?')
@@ -209,13 +201,53 @@ class Tournament:
                 for i in valid:
                     if i == ask:
                         new = input(f'What is the {ask} of the {instance} ?')
-                        serialized_tournament[tournament.name] = update_dic(serialized_tournament[tournament.name], ask, new)
+                        serialized_tournament[tournament.name] = update_dic(serialized_tournament[tournament.name], ask,
+                                                                            new)
 
                         asko = ask.replace(' ', '_')
                         setattr(obj, f'{asko}', new)
 
 
+def sort_for_pairs(value):
+    if value == "rank":
+        listed_p = {i.name: i.rank for i in [play for play in tournament.players]}
+    if value == "score":
+        listed_p = {i.name: i.score for i in [play for play in tournament.players]}
 
+    sorted_p = sorted(((value, key) for (key, value) in listed_p.items()), reverse=True)
+
+    part1 = [p[1] for p in list(sorted_p)[:int(len(sorted_p) / 2)]]
+    part2 = [p[1] for p in list(sorted_p)[int(len(sorted_p) / 2):]]
+
+    pairs = [(part1[i], part2[i]) for i in range(0, len(part1))]
+
+    if value == "score":
+        for play in tournament.players:
+            for p in pairs:
+
+                def sort_for_pairs(value):
+                    if value == "rank":
+                        listed_p = {i.name: i.rank for i in [play for play in tournament.players]}
+                    if value == "score":
+                        listed_p = {i.name: i.score for i in [play for play in tournament.players]}
+
+                    sorted_p = sorted(((value, key) for (key, value) in listed_p.items()), reverse=True)
+
+                    part1 = [p[1] for p in list(sorted_p)[:int(len(sorted_p) / 2)]]
+                    part2 = [p[1] for p in list(sorted_p)[int(len(sorted_p) / 2):]]
+
+                    pairs = [(part1[i], part2[i]) for i in range(0, len(part1))]
+
+                    if value == "score":
+                        for play in tournament.players:
+                            for p in pairs:
+
+
+
+
+
+
+    return pairs
 
 
 class Round:
@@ -224,9 +256,45 @@ class Round:
     def __init__(self):
         pass
 
-    # Chaque paire fait un match
+    def generate_pairs(self):
 
-    def new_match(self, pairs):
+        if Round.counter == 1:
+
+            ask = input('Does players are already ranked ? /n yes or no ?')
+
+            if ask == 'no':
+                p = random.sample(tournament.players, len(tournament.players))
+                pairs = [tuple(p[x:x + 2]) for x in range(0, len(p), 2)]
+                return pairs
+
+            if ask == 'yes':
+                for play in tournament.players:
+                    play.rank = int(input(f"What's {play.name} rank ?"))
+
+                    num = get_num_player(play.name, serialized_player)
+                    serialized_player[num] = update_dic(serialized_player[num], 'rank', play.rank)
+
+                pairs = sort_for_pairs('rank')
+                return pairs
+        else:
+            sorted_p = sort_for_pairs('score')
+
+            part1 = [p[1] for p in list(sorted_p)[:int(len(sorted_p) / 2)]]
+            part2 = [p[1] for p in list(sorted_p)[int(len(sorted_p) / 2):]]
+
+            if part1[i] == part2[i]:
+                sorted_p = sort_for_pairs('rank')
+
+                part1 = [p[1] for p in list(sorted_p)[:int(len(sorted_p) / 2)]]
+                part2 = [p[1] for p in list(sorted_p)[int(len(sorted_p) / 2):]]
+
+            else:
+                pass
+
+            pairs = [(part1[i], part2[i]) for i in range(0, len(part1))]
+            return pairs
+
+    def set_match(self, pairs):
         matchs = []
         iter = 0
 
@@ -240,55 +308,64 @@ class Round:
 
         self.matchs = matchs
 
-    def generate_random_pairs(self):
-
-        p = random.sample(tournament.players, len(tournament.players))
-        pairs = [tuple(p[x:x + 2]) for x in range(0, len(p), 2)]
-
-        print('--------------------------------------------------------')
-        print(pairs[0][0].name, " will fight against ", pairs[0][1].name)
-        print(pairs[1][0].name, " will fight against ", pairs[1][1].name)
-
-        return pairs
-
-    def generate_pairs(self):
-
-
-        ask = input('Does players are already ranked ? /n yes or no ?')
-
-        if ask == 'yes':
-            for play in tournament.players:
-                play.rank = int(input(f"What's {play.name} rank ?"))
-
-                num = get_num_player(play.name, serialized_player)
-                serialized_player[num] = update_dic(serialized_player[num], 'rank', play.rank)
-
-        pass    
-
 
 class Match:
 
     def __init__(self):
         pass
 
+    def play_match(self):
+        for match in rnd.matchs:
+            print(match.paired_players[0], "-- will fight against --", match.paired_players[1])
+            input("Press Enter to start")
 
-# ------------------------------------------------------------------ #
-# ------------------- WILL BE IN THE VIEW PART --------------------- #
-# ------------------ FROM NOW, IT'S THE TEST PART ------------------ #
-# ------------------------------------------------------------------ #
+            now = datetime.datetime.now()
+            match.start = now.hour, now.minute, now.second
+
+            input("Press Enter to finish")
+
+            now = datetime.datetime.now()
+            match.end = now.hour, now.minute, now.second
+
+            scores = []
+            for n, p in enumerate(match.paired_players):
+                score = float(input(f"What's {match.paired_players[n]}'s score ?"))
+                p = [p for p in tournament.players if p.name == match.paired_players[n]][0]
+                scores.append(score)
+
+                old = float(p.score)
+                new = old + score
+                p.score = new
+
+                num = get_num_player(p.name, serialized_player)
+                serialized_player[num] = update_dic(serialized_player[num], 'score', new)
+
+            match.score = tuple(scores)
+
+        return 'Round over'
+
+            # self.date = tournament.date
+
+
+# ----------------------------------------------------------------- #
+# ------------------- WILL BE IN THE VIEW PART -------------------- #
+# ------------------ FOR NOW, IT'S THE TEST PART ------------------ #
+# ----------------------------------------------------------------- #
 
 
 tournament = Tournament()
 tournament.new_tournament()
 tournament.add_players()
 
+rnd = tournament.new_round()
+rnd.set_match(rnd.generate_pairs())
+
+match = Match()
+match.play_match()
+
+
 # tournament.modify_infos(tournament.players)
 # tournament.modify_infos(tournament)
 
 # tournament.add_infos(tournament)
 # tournament.add_infos(tournament.players)
-
-# tournament.new_round()
-
-# round = Round()
-# round.new_match(tournament.new_round())
